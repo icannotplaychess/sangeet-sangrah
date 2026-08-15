@@ -1,0 +1,162 @@
+@import "tailwindcss";
+
+@theme {
+  /* संगीत संग्रह — midnight archive palette */
+  --color-ink: #02070d;
+  --color-ink-2: #040d16;
+  --color-ink-3: #071522;
+  --color-pale: #d7e4e7;
+  --color-pale-2: #a8bcc2;
+  --color-muted: #71868b;
+  --color-dim: #4a5c61;
+  --color-teal: #006d82;
+  --color-teal-bright: #2aa5bd;
+  --color-line: rgba(0, 109, 130, 0.28);
+  --color-line-soft: rgba(113, 134, 139, 0.16);
+
+  --font-deva: var(--font-noto-serif-deva), "Noto Serif Devanagari", serif;
+  --font-editorial: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  --font-ui: var(--font-mukta), var(--font-noto-serif-deva), sans-serif;
+  --font-mono: var(--font-jetbrains), var(--font-mukta), monospace;
+
+  --animate-fade-up: fade-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade-in: fade-in 1.4s ease both;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(24px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-ink);
+  color: var(--color-pale);
+  font-family: var(--font-ui);
+  font-feature-settings: "kern" 1;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: rgba(0, 109, 130, 0.45);
+  color: #eaf6f8;
+}
+
+/* ——— editorial utilities ——— */
+
+.font-deva {
+  font-family: var(--font-deva);
+}
+
+.font-editorial {
+  font-family: var(--font-editorial);
+}
+
+.font-label {
+  font-family: var(--font-mono);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+/* Devanagari has no true italic — a restrained oblique keeps the
+   editorial contrast of the reference without distorting glyphs. */
+.deva-oblique {
+  transform: skewX(-7deg);
+  transform-origin: left bottom;
+}
+
+.hero-ghost {
+  color: transparent;
+  -webkit-text-stroke: 1px rgba(113, 134, 139, 0.14);
+  user-select: none;
+  pointer-events: none;
+}
+
+.pill {
+  border: 1px solid var(--color-line);
+  border-radius: 9999px;
+  transition:
+    border-color 0.5s ease,
+    box-shadow 0.5s ease,
+    color 0.5s ease,
+    background-color 0.5s ease;
+}
+
+.pill:hover {
+  border-color: rgba(42, 165, 189, 0.75);
+  box-shadow:
+    0 0 24px rgba(0, 109, 130, 0.35),
+    inset 0 0 18px rgba(0, 109, 130, 0.12);
+}
+
+.pill:hover .pill-arrow {
+  transform: translateX(4px);
+}
+
+.pill-arrow {
+  display: inline-block;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.hairline {
+  border-color: var(--color-line-soft);
+}
+
+.link-quiet {
+  transition: color 0.35s ease;
+}
+
+.link-quiet:hover {
+  color: var(--color-teal-bright);
+}
+
+.glow-dot {
+  box-shadow: 0 0 12px rgba(42, 165, 189, 0.8);
+}
+
+/* faint radial atmosphere behind the hero */
+.atmosphere {
+  background:
+    radial-gradient(
+      ellipse 60% 45% at 50% 8%,
+      rgba(0, 109, 130, 0.12),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 50% 40% at 85% 90%,
+      rgba(0, 109, 130, 0.06),
+      transparent 70%
+    );
+}
+
+.prose-sangrah p {
+  margin-bottom: 1.4em;
+  line-height: 2;
+  color: var(--color-pale-2);
+}
+
+.prose-sangrah p:last-child {
+  margin-bottom: 0;
+}
