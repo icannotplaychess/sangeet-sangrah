@@ -11,6 +11,19 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## Vercel deployment
+
+The app must deploy from the **repository root** (where `package.json` lives). Root Directory in Vercel should be **empty** or `.` — not `sangeet-sangrah`.
+
+If the site shows **404** or **DEPLOYMENT_NOT_FOUND**:
+
+1. **Production branch** — ensure Vercel deploys from `main` (the app is merged there).
+2. **Redeploy** — Vercel Dashboard → Deployments → latest Production → Redeploy.
+3. **Deployment Protection** — Settings → Deployment Protection → allow **public** access to Production (otherwise visitors see a Vercel login wall).
+4. **Domains** — Settings → Domains → assign your production URL to the latest deployment.
+
+After each push to `main`, use the **Production** deployment URL shown in the Vercel dashboard (not old preview hash links).
+
 ## Stack
 
 - Next.js 16 (App Router)
