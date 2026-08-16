@@ -29,7 +29,30 @@ After each push to `main`, use the **Production** deployment URL shown in the Ve
 - Next.js 16 (App Router)
 - TypeScript
 - Tailwind CSS v4
+- Prisma + SQLite (content CMS)
 - Noto Serif Devanagari + Cormorant Garamond + JetBrains Mono
+
+## CMS & Admin
+
+Admin panel: `/admin` (password from `ADMIN_PASSWORD` in `.env`).
+
+| Feature | Route |
+|---------|-------|
+| Dashboard | `/admin` |
+| Song editor + audio/YouTube | `/admin/geete/[slug]` |
+| Article CMS | `/admin/lekh` |
+| Global admin search | `/admin/shodh` |
+
+**Audio uploads** require the rights checkbox; files are validated server-side (MP3, WAV, M4A, OGG; max 25 MB). **YouTube** uses official embeds only — no downloading.
+
+Public article pages: `/lekh/[slug]`. Song URLs: `/geete/[slug]` (alias `/songs/[slug]`).
+
+```bash
+npm run db:migrate   # apply migrations
+npm run db:seed      # seed from static data
+```
+
+Set `ADMIN_PASSWORD` and `ADMIN_SECRET` in production. On Vercel, SQLite is rebuilt at deploy; use persistent storage (e.g. Turso, Postgres + blob storage) for production CMS writes and audio hosting.
 
 ## Sections
 

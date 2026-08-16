@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Song {
+  id              String   @id @default(cuid())
+  slug            String   @unique
+  title           String
+  latinTitle      String?
+  singers         String
+  lyricist        String
+  composer        String
+  filmOrAlbum     String?
+  year            String?
+  language        String   @default("मराठी")
+  type            String
+  raga            String?
+  taal            String?
+  theme           String?
+  excerpt         String?
+  context         String?
+  meaning         String?
+  musicAnalysis   String?
+  culturalContext String?
+  legacy          String?
+  description     String?
+  tags            String?
+  status          String   @default("PUBLISHED")
+  publishedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  audioAsset   AudioAsset?
+  youtubeVideo YouTubeVideo?
+  articleLinks ArticleEntity[] @relation("SongArticles")
+  sources      Source[]
+}
+
+model Artist {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  name             String
+  latinName        String?
+  categories       String
+  meta             String?
+  period           String?
+  birthDate        String?
+  birthPlace       String?
+  portraitUrl      String?
+  intro            String?
+  timeline         String?
+  contribution     String?
+  style            String?
+  notableSongSlugs String?
+  notableWorks     String?
+  collaborations   String?
+  facts            String?
+  related          String?
+  tags             String?
+  status           String   @default("PUBLISHED")
+  publishedAt      DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  articleLinks ArticleEntity[] @relation("ArtistArticles")
+  sources      Source[]
+}
+
+model Article {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  subtitle    String?
+  type        String
+  heroImage   String?
+  author      String?
+  summary     String?
+  content     String
+  tags        String?
+  status      String   @default("DRAFT")
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  entities ArticleEntity[]
+  sources  Source[]
+}
+
+model ArticleEntity {
+  id         String  @id @default(cuid())
+  articleId  String
+  article    Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  entityType String
+  entitySlug String
+
+  songId   String?
+  song     Song?   @relation("SongArticles", fields: [songId], references: [id], onDelete: SetNull)
+  artistId String?
+  artist   Artist? @relation("ArtistArticles", fields: [artistId], references: [id], onDelete: SetNull)
+
+  @@unique([articleId, entityType, entitySlug])
+}
+
+model AudioAsset {
+  id                String    @id @default(cuid())
+  songId            String    @unique
+  song              Song      @relation(fields: [songId], references: [id], onDelete: Cascade)
+  audioUrl          String
+  audioSource       String    @default("UPLOADED")
+  audioFilename     String?
+  mimeType          String?
+  fileSize          Int?
+  rightsConfirmed   Boolean   @default(false)
+  rightsConfirmedAt DateTime?
+  uploadedAt        DateTime?
+  uploadedBy        String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model YouTubeVideo {
+  id             String   @id @default(cuid())
+  songId         String   @unique
+  song           Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+  youtubeVideoId String
+  youtubeUrl     String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Source {
+  id          String  @id @default(cuid())
+  title       String
+  author      String?
+  publication String?
+  url         String?
+  year        String?
+  notes       String?
+  sourceType  String  @default("OTHER")
+
+  songId    String?
+  song      Song?    @relation(fields: [songId], references: [id], onDelete: Cascade)
+  artistId  String?
+  artist    Artist?  @relation(fields: [artistId], references: [id], onDelete: Cascade)
+  articleId String?
+  article   Article? @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model AdminSession {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}

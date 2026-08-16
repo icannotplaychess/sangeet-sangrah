@@ -8,6 +8,7 @@ const links = [
   { href: "/sangrah", label: "संग्रह" },
   { href: "/kalakar", label: "कलाकार" },
   { href: "/geete", label: "गीते" },
+  { href: "/lekh", label: "लेख" },
   { href: "/kavita", label: "कविता" },
   { href: "/shayari", label: "शायरी" },
   { href: "/itihas", label: "इतिहास" },

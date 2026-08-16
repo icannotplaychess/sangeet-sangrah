@@ -32,6 +32,14 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# uploaded media (admin-only; not in repo)
+/public/uploads/
+
+# sqlite dev db is regenerated at build
+/prisma/dev.db
+/prisma/dev.db-journal
 
 # vercel
 .vercel
