@@ -1,6 +1,8 @@
 import { ArticleEditor } from "@/components/admin/ArticleEditor";
 import { prisma } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export default async function NewArticlePage() {
   const [songs, artists] = await Promise.all([
     prisma.song.findMany({ select: { slug: true, title: true }, orderBy: { title: "asc" } }),

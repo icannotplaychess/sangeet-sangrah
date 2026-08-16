@@ -4,7 +4,8 @@ import { prisma } from "@/lib/db";
 import { parseJson } from "@/lib/json";
 
 export default async function EditSongPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeURIComponent(rawSlug);
   const song = await prisma.song.findUnique({
     where: { slug },
     include: { audioAsset: true, youtubeVideo: true },
@@ -50,7 +51,7 @@ export default async function EditSongPage({ params }: { params: Promise<{ slug:
     <div>
       <h1 className="font-deva mb-2 text-3xl text-pale">{song.title}</h1>
       <p className="font-label mb-8 text-[9px] text-dim">/geete/{song.slug}</p>
-      <SongEditor initial={initial} />
+      <SongEditor initial={initial} useBlobUpload={Boolean(process.env.BLOB_READ_WRITE_TOKEN)} />
     </div>
   );
 }

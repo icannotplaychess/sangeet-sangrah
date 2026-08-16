@@ -1,6 +1,7 @@
 import { mkdir, writeFile, unlink } from "fs/promises";
 import path from "path";
 import { NextResponse } from "next/server";
+import { del } from "@vercel/blob";
 import { requireAdmin } from "@/lib/auth";
 import { validateAudioFile } from "@/lib/audio";
 import { prisma } from "@/lib/db";
@@ -53,11 +54,23 @@ export async function POST(request: Request) {
   const audioUrl = `/uploads/audio/${filename}`;
 
   if (song.audioAsset) {
-    const oldPath = path.join(process.cwd(), "public", song.audioAsset.audioUrl.replace(/^\//, ""));
-    try {
-      await unlink(oldPath);
-    } catch {
-      /* ignore missing old file */
+    if (song.audioAsset.audioUrl.startsWith("https://")) {
+      try {
+        await del(song.audioAsset.audioUrl);
+      } catch {
+        /* blob may already be gone */
+      }
+    } else {
+      const oldPath = path.join(
+        process.cwd(),
+        "public",
+        song.audioAsset.audioUrl.replace(/^\//, ""),
+      );
+      try {
+        await unlink(oldPath);
+      } catch {
+        /* ignore missing old file */
+      }
     }
     await prisma.audioAsset.update({
       where: { songId },
@@ -105,11 +118,19 @@ export async function DELETE(request: Request) {
 
   const asset = await prisma.audioAsset.findUnique({ where: { songId } });
   if (asset) {
-    const diskPath = path.join(process.cwd(), "public", asset.audioUrl.replace(/^\//, ""));
-    try {
-      await unlink(diskPath);
-    } catch {
-      /* ignore */
+    if (asset.audioUrl.startsWith("https://")) {
+      try {
+        await del(asset.audioUrl);
+      } catch {
+        /* blob may already be gone */
+      }
+    } else {
+      const diskPath = path.join(process.cwd(), "public", asset.audioUrl.replace(/^\//, ""));
+      try {
+        await unlink(diskPath);
+      } catch {
+        /* ignore */
+      }
     }
     await prisma.audioAsset.delete({ where: { songId } });
   }

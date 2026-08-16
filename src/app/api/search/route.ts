@@ -9,13 +9,7 @@ function norm(s: string): string {
   return s.toLowerCase().normalize("NFC");
 }
 
-export async function GET(request: Request) {
-  const q = new URL(request.url).searchParams.get("q") ?? "";
-  const query = q.trim();
-  if (query.length < 2) return NextResponse.json([]);
-
-  const staticResults = searchContent(query, 30);
-
+async function queryDb(query: string) {
   const [songs, artists, articles] = await Promise.all([
     prisma.song.findMany({
       where: { status: "PUBLISHED", title: { contains: query } },
@@ -28,11 +22,31 @@ export async function GET(request: Request) {
       select: { slug: true, name: true, meta: true },
     }),
     prisma.article.findMany({
-      where: { status: "PUBLISHED", OR: [{ title: { contains: query } }, { summary: { contains: query } }] },
+      where: {
+        status: "PUBLISHED",
+        OR: [{ title: { contains: query } }, { summary: { contains: query } }],
+      },
       take: 10,
       select: { slug: true, title: true, summary: true, type: true, content: true },
     }),
   ]);
+  return { songs, artists, articles };
+}
+
+export async function GET(request: Request) {
+  const q = new URL(request.url).searchParams.get("q") ?? "";
+  const query = q.trim();
+  if (query.length < 2) return NextResponse.json([]);
+
+  const staticResults = searchContent(query, 30);
+
+  let dbData: Awaited<ReturnType<typeof queryDb>> = { songs: [], artists: [], articles: [] };
+  try {
+    dbData = await queryDb(query);
+  } catch {
+    /* no database configured — static results only */
+  }
+  const { songs, artists, articles } = dbData;
 
   const nq = norm(query);
   const dbResults = [
@@ -56,7 +70,9 @@ export async function GET(request: Request) {
       subtitle: a.summary ?? a.type,
       href: `/lekh/${a.slug}`,
       haystack: norm(
-        [a.title, a.summary ?? "", blocksToPlainText(parseJson<ArticleBlock[]>(a.content, []))].join(" "),
+        [a.title, a.summary ?? "", blocksToPlainText(parseJson<ArticleBlock[]>(a.content, []))].join(
+          " ",
+        ),
       ),
     })),
   ].filter((d) => d.haystack.includes(nq));

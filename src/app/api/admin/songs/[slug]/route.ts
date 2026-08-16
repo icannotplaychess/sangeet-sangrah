@@ -13,7 +13,8 @@ export async function GET(_req: Request, ctx: RouteCtx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { slug } = await ctx.params;
+  const { slug: rawSlug } = await ctx.params;
+  const slug = decodeURIComponent(rawSlug);
   const song = await prisma.song.findUnique({
     where: { slug },
     include: { audioAsset: true, youtubeVideo: true, sources: true },
@@ -40,7 +41,8 @@ export async function PUT(request: Request, ctx: RouteCtx) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { slug } = await ctx.params;
+  const { slug: rawSlug } = await ctx.params;
+  const slug = decodeURIComponent(rawSlug);
   const existing = await prisma.song.findUnique({ where: { slug } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 

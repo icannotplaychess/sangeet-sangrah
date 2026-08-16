@@ -3,6 +3,8 @@ import Link from "next/link";
 import { SectionLabel } from "@/components/ui";
 import { getPublishedSongs } from "@/lib/repository";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "गीते",
   description: "मराठी भावगीते, चित्रपटगीते, अभंग, नाट्यगीते आणि गझल यांचा संदर्भसंग्रह.",

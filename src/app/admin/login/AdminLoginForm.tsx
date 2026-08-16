@@ -22,7 +22,14 @@ export default function AdminLoginForm() {
     });
     setLoading(false);
     if (!res.ok) {
-      setError("चुकीचा संकेतशब्द.");
+      let message = "चुकीचा संकेतशब्द.";
+      try {
+        const data = await res.json();
+        if (res.status === 503 && data.error) message = data.error;
+      } catch {
+        /* keep default message */
+      }
+      setError(message);
       return;
     }
     router.push(next);

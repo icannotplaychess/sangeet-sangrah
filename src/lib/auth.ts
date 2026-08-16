@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
@@ -7,8 +8,14 @@ const COOKIE_NAME = "ss_admin_session";
 const SESSION_DAYS = 7;
 
 function getSecret(): Uint8Array {
-  const secret = process.env.ADMIN_SECRET;
-  if (!secret) throw new Error("ADMIN_SECRET is not configured");
+  // ADMIN_SECRET is preferred; otherwise derive a stable secret from
+  // ADMIN_PASSWORD so only one env var is required to run the CMS.
+  const secret =
+    process.env.ADMIN_SECRET ??
+    (process.env.ADMIN_PASSWORD
+      ? createHash("sha256").update(`sangeet-sangrah:${process.env.ADMIN_PASSWORD}`).digest("hex")
+      : null);
+  if (!secret) throw new Error("ADMIN_PASSWORD is not configured");
   return new TextEncoder().encode(secret);
 }
 

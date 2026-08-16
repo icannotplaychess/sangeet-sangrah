@@ -5,19 +5,8 @@ import { ArticleContent, SourcesSection } from "@/components/ArticleContent";
 import { SectionLabel, TagList } from "@/components/ui";
 import { getPublishedArticle } from "@/lib/repository";
 import { ARTICLE_TYPE_LABELS } from "@/lib/article-types";
-import { prisma } from "@/lib/db";
 
-export async function generateStaticParams() {
-  try {
-    const articles = await prisma.article.findMany({
-      where: { status: "PUBLISHED" },
-      select: { slug: true },
-    });
-    return articles.map((a) => ({ slug: a.slug }));
-  } catch {
-    return [];
-  }
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -25,14 +14,14 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const article = await getPublishedArticle(slug);
+  const article = await getPublishedArticle(decodeURIComponent(slug));
   if (!article) return {};
   return { title: article.title, description: article.summary ?? undefined };
 }
 
 export default async function ArticlePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const article = await getPublishedArticle(slug);
+  const article = await getPublishedArticle(decodeURIComponent(slug));
   if (!article) notFound();
 
   return (

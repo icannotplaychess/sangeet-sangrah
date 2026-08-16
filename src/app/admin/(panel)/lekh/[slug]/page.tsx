@@ -5,7 +5,8 @@ import { parseJson } from "@/lib/json";
 import type { ArticleBlock } from "@/lib/article-types";
 
 export default async function EditArticlePage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
+  const { slug: rawSlug } = await params;
+  const slug = decodeURIComponent(rawSlug);
   const [article, songs, artists] = await Promise.all([
     prisma.article.findUnique({
       where: { slug },

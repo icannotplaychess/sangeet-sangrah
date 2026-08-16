@@ -1,8 +1,28 @@
 import Link from "next/link";
 import { getAdminStats } from "@/lib/repository";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminDashboardPage() {
-  const { counts, recentSongs, recentArticles } = await getAdminStats();
+  let stats: Awaited<ReturnType<typeof getAdminStats>>;
+  try {
+    stats = await getAdminStats();
+  } catch {
+    return (
+      <div className="rounded-xl border hairline bg-ink-2/50 p-8">
+        <h1 className="font-deva text-2xl text-pale">डेटाबेस जोडलेला नाही</h1>
+        <p className="font-deva mt-4 max-w-2xl text-sm leading-relaxed text-pale-2">
+          CMS वापरण्यासाठी Vercel डॅशबोर्डमध्ये जा → तुमचा project → <strong>Storage</strong> tab →{" "}
+          <strong>Create Database</strong> → <strong>Postgres (Neon)</strong> निवडा आणि project ला
+          connect करा. नंतर <strong>Redeploy</strong> करा.
+        </p>
+        <p className="font-deva mt-3 max-w-2xl text-sm leading-relaxed text-muted">
+          ऑडिओ अपलोडसाठी त्याच Storage tab मध्ये <strong>Blob</strong> store देखील तयार करा.
+        </p>
+      </div>
+    );
+  }
+  const { counts, recentSongs, recentArticles } = stats;
 
   return (
     <div>

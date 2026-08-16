@@ -2,6 +2,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { ARTICLE_TYPE_LABELS } from "@/lib/article-types";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminArticlesListPage() {
   const articles = await prisma.article.findMany({
     orderBy: { updatedAt: "desc" },

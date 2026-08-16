@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { SectionLabel } from "@/components/ui";
-import { prisma } from "@/lib/db";
+import { getPublishedArticles } from "@/lib/repository";
 import { ARTICLE_TYPE_LABELS } from "@/lib/article-types";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "लेख",
@@ -10,11 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function ArticlesIndexPage() {
-  const articles = await prisma.article.findMany({
-    where: { status: "PUBLISHED" },
-    orderBy: { publishedAt: "desc" },
-    select: { slug: true, title: true, subtitle: true, type: true, summary: true, author: true },
-  });
+  const articles = await getPublishedArticles();
 
   return (
     <div className="mx-auto max-w-4xl px-5 py-20 md:px-8 md:py-28">

@@ -243,32 +243,109 @@ export function mapDbArtistToLegacy(artist: DbArtist): Artist {
   };
 }
 
+/** Static-data fallback used when no database is configured (read-only mode). */
+function songFromStatic(s: Song): DbSong {
+  return {
+    id: `static-${s.slug}`,
+    slug: s.slug,
+    title: s.title,
+    latinTitle: s.latinTitle,
+    singers: s.singers,
+    lyricist: s.lyricist,
+    composer: s.composer,
+    filmOrAlbum: s.filmOrAlbum ?? null,
+    year: s.year ?? null,
+    language: s.language,
+    type: s.type,
+    raga: s.raga ?? null,
+    taal: s.taal ?? null,
+    theme: s.theme,
+    excerpt: s.excerpt ?? [],
+    context: s.context,
+    meaning: s.meaning,
+    musicAnalysis: s.musicAnalysis,
+    culturalContext: s.culturalContext,
+    legacy: [],
+    description: null,
+    tags: s.tags,
+    relatedArtistSlugs: s.relatedArtistSlugs,
+    audio: null,
+    youtube: null,
+    sources: [],
+    status: "PUBLISHED",
+  };
+}
+
 export async function getPublishedSongs(): Promise<DbSong[]> {
-  const rows = await prisma.song.findMany({
-    where: { status: "PUBLISHED" },
-    include: songInclude,
-    orderBy: { title: "asc" },
-  });
-  const staticRelated = await getStaticRelatedMap();
-  return rows.map((r) => mapDbSong(r, staticRelated.get(r.slug) ?? []));
+  try {
+    const rows = await prisma.song.findMany({
+      where: { status: "PUBLISHED" },
+      include: songInclude,
+      orderBy: { title: "asc" },
+    });
+    const staticRelated = await getStaticRelatedMap();
+    return rows.map((r) => mapDbSong(r, staticRelated.get(r.slug) ?? []));
+  } catch {
+    const { songs } = await import("@/data/songs");
+    return songs.map(songFromStatic);
+  }
 }
 
 export async function getSongBySlug(slug: string): Promise<DbSong | null> {
-  const row = await prisma.song.findFirst({
-    where: { slug, status: "PUBLISHED" },
-    include: songInclude,
-  });
-  if (!row) return null;
-  const staticRelated = await getStaticRelatedMap();
-  return mapDbSong(row, staticRelated.get(slug) ?? []);
+  try {
+    const row = await prisma.song.findFirst({
+      where: { slug, status: "PUBLISHED" },
+      include: songInclude,
+    });
+    if (!row) return null;
+    const staticRelated = await getStaticRelatedMap();
+    return mapDbSong(row, staticRelated.get(slug) ?? []);
+  } catch {
+    const { songs } = await import("@/data/songs");
+    const s = songs.find((x) => x.slug === slug);
+    return s ? songFromStatic(s) : null;
+  }
 }
 
 export async function getArtistBySlug(slug: string): Promise<DbArtist | null> {
-  const row = await prisma.artist.findFirst({
-    where: { slug, status: "PUBLISHED" },
-    include: { sources: true },
-  });
-  return row ? mapDbArtist(row) : null;
+  try {
+    const row = await prisma.artist.findFirst({
+      where: { slug, status: "PUBLISHED" },
+      include: { sources: true },
+    });
+    return row ? mapDbArtist(row) : null;
+  } catch {
+    const { gayak } = await import("@/data/artists-gayak");
+    const { sangeetkar } = await import("@/data/artists-sangeetkar");
+    const { geetkar } = await import("@/data/artists-geetkar");
+    const { kavi } = await import("@/data/artists-kavi");
+    const a = [...gayak, ...sangeetkar, ...geetkar, ...kavi].find((x) => x.slug === slug);
+    if (!a) return null;
+    return {
+      id: `static-${a.slug}`,
+      slug: a.slug,
+      name: a.name,
+      latinName: a.latinName,
+      categories: a.categories,
+      meta: a.meta,
+      period: a.period,
+      birthDate: null,
+      birthPlace: null,
+      portraitUrl: null,
+      intro: a.intro,
+      timeline: a.timeline,
+      contribution: a.contribution,
+      style: a.style,
+      notableSongSlugs: a.notableSongSlugs,
+      notableWorks: a.notableWorks ?? [],
+      collaborations: a.collaborations,
+      facts: a.facts,
+      related: a.related,
+      tags: a.tags,
+      sources: [],
+      status: "PUBLISHED",
+    };
+  }
 }
 
 export async function getPublishedArtists(): Promise<DbArtist[]> {
@@ -280,33 +357,62 @@ export async function getPublishedArtists(): Promise<DbArtist[]> {
   return rows.map(mapDbArtist);
 }
 
+export type ArticleListItem = {
+  slug: string;
+  title: string;
+  subtitle: string | null;
+  type: string;
+  summary: string | null;
+  author: string | null;
+};
+
+export async function getPublishedArticles(): Promise<ArticleListItem[]> {
+  try {
+    return await prisma.article.findMany({
+      where: { status: "PUBLISHED" },
+      orderBy: { publishedAt: "desc" },
+      select: { slug: true, title: true, subtitle: true, type: true, summary: true, author: true },
+    });
+  } catch {
+    return [];
+  }
+}
+
 export async function getPublishedArticle(slug: string): Promise<DbArticle | null> {
-  const row = await prisma.article.findFirst({
-    where: { slug, status: "PUBLISHED" },
-    include: {
-      sources: true,
-      entities: {
-        include: {
-          song: { select: { slug: true, title: true } },
-          artist: { select: { slug: true, name: true } },
+  try {
+    const row = await prisma.article.findFirst({
+      where: { slug, status: "PUBLISHED" },
+      include: {
+        sources: true,
+        entities: {
+          include: {
+            song: { select: { slug: true, title: true } },
+            artist: { select: { slug: true, name: true } },
+          },
         },
       },
-    },
-  });
-  if (!row) return null;
-  return mapDbArticle(row);
+    });
+    if (!row) return null;
+    return mapDbArticle(row);
+  } catch {
+    return null;
+  }
 }
 
 export async function getArticlesForSong(songId: string) {
-  const links = await prisma.articleEntity.findMany({
-    where: { songId, article: { status: "PUBLISHED" } },
-    include: { article: { select: { slug: true, title: true, type: true } } },
-  });
-  return links.map((l) => ({
-    slug: l.article.slug,
-    title: l.article.title,
-    type: l.article.type,
-  }));
+  try {
+    const links = await prisma.articleEntity.findMany({
+      where: { songId, article: { status: "PUBLISHED" } },
+      include: { article: { select: { slug: true, title: true, type: true } } },
+    });
+    return links.map((l) => ({
+      slug: l.article.slug,
+      title: l.article.title,
+      type: l.article.type,
+    }));
+  } catch {
+    return [];
+  }
 }
 
 function mapDbArticle(

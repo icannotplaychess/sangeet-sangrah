@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { upload } from "@vercel/blob/client";
 import AudioPlayer from "@/components/AudioPlayer";
 import YouTubeEmbed from "@/components/YouTubeEmbed";
 import { extractYouTubeVideoId } from "@/lib/youtube";
@@ -74,7 +75,15 @@ function textToLines(text: string) {
     .filter(Boolean);
 }
 
-export function SongEditor({ initial, isNew = false }: { initial?: SongFormData; isNew?: boolean }) {
+export function SongEditor({
+  initial,
+  isNew = false,
+  useBlobUpload = false,
+}: {
+  initial?: SongFormData;
+  isNew?: boolean;
+  useBlobUpload?: boolean;
+}) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
@@ -158,24 +167,54 @@ export function SongEditor({ initial, isNew = false }: { initial?: SongFormData;
 
     setUploading(true);
     setError("");
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("songId", songId);
-    fd.append("rightsConfirmed", "true");
 
-    const res = await fetch("/api/admin/audio", { method: "POST", body: fd });
-    setUploading(false);
+    try {
+      if (useBlobUpload) {
+        // Direct-to-Blob upload (bypasses the serverless request-size limit)
+        const blob = await upload(file.name, file, {
+          access: "public",
+          handleUploadUrl: "/api/admin/audio/upload",
+          clientPayload: JSON.stringify({ songId, rightsConfirmed: true }),
+        });
 
-    if (!res.ok) {
-      const data = await res.json();
-      setError(data.error ?? "अपलोड अयशस्वी.");
-      return;
+        const attach = await fetch("/api/admin/audio/attach", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            songId,
+            url: blob.url,
+            filename: file.name,
+            size: file.size,
+            contentType: file.type,
+            rightsConfirmed: true,
+          }),
+        });
+        if (!attach.ok) {
+          const data = await attach.json();
+          throw new Error(data.error ?? "अपलोड अयशस्वी.");
+        }
+      } else {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("songId", songId);
+        fd.append("rightsConfirmed", "true");
+
+        const res = await fetch("/api/admin/audio", { method: "POST", body: fd });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error ?? "अपलोड अयशस्वी.");
+        }
+      }
+
+      setMessage("ऑडिओ जतन केले.");
+      setPreviewFile(null);
+      if (fileRef.current) fileRef.current.value = "";
+      router.refresh();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "अपलोड अयशस्वी.");
+    } finally {
+      setUploading(false);
     }
-
-    setMessage("ऑडिओ जतन केले.");
-    setPreviewFile(null);
-    if (fileRef.current) fileRef.current.value = "";
-    router.refresh();
   }
 
   async function removeAudio() {

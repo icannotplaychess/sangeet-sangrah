@@ -5,22 +5,10 @@ import { ArticleContent, SourcesSection } from "@/components/ArticleContent";
 import MediaSection from "@/components/MediaSection";
 import { ArticleHeading, MetaRow, Prose, SectionLabel, TagList } from "@/components/ui";
 import { isAdminAuthenticated } from "@/lib/auth";
-import { prisma } from "@/lib/db";
 import { getArtistBySlug, getArticlesForSong, getSongBySlug } from "@/lib/repository";
 import { ARTICLE_TYPE_LABELS } from "@/lib/article-types";
 
-export async function generateStaticParams() {
-  try {
-    const songs = await prisma.song.findMany({
-      where: { status: "PUBLISHED" },
-      select: { slug: true },
-    });
-    return songs.map((song) => ({ slug: song.slug }));
-  } catch {
-    const { songs } = await import("@/data/songs");
-    return songs.map((song) => ({ slug: song.slug }));
-  }
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
@@ -28,14 +16,14 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const song = await getSongBySlug(slug);
+  const song = await getSongBySlug(decodeURIComponent(slug));
   if (!song) return {};
   return { title: song.title, description: song.context[0] ?? song.theme ?? undefined };
 }
 
 export default async function SongPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const song = await getSongBySlug(slug);
+  const song = await getSongBySlug(decodeURIComponent(slug));
   if (!song) notFound();
 
   const [relatedArtists, linkedArticles, isAdmin] = await Promise.all([
