@@ -1,4 +1,7 @@
 import { PrismaClient } from "@prisma/client";
+import { ensureDatabaseUrl } from "../src/lib/db-url";
+
+ensureDatabaseUrl();
 import { gayak } from "../src/data/artists-gayak";
 import { sangeetkar } from "../src/data/artists-sangeetkar";
 import { geetkar } from "../src/data/artists-geetkar";

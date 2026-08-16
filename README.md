@@ -24,6 +24,8 @@ If the site shows **404** or **DEPLOYMENT_NOT_FOUND**:
 
 After each push to `main`, use the **Production** deployment URL shown in the Vercel dashboard (not old preview hash links).
 
+The production build no longer requires a `DATABASE_URL` Vercel env var — SQLite defaults to `prisma/dev.db` and is created during `npm run build`. Optional: set `ADMIN_PASSWORD` and `ADMIN_SECRET` in Vercel → Settings → Environment Variables for the CMS.
+
 ## Stack
 
 - Next.js 16 (App Router)
@@ -57,7 +59,8 @@ Set `ADMIN_PASSWORD` and `ADMIN_SECRET` in production. On Vercel, SQLite is rebu
 ## Sections
 
 - **कलाकार** — Artists (Lata Mangeshkar, Sudhir Phadke, etc.)
-- **गीते** — Songs with भावार्थ and context
+- **गीते** — Songs with audio, YouTube, editorial archive pages
+- **लेख** — Editorial articles (CMS)
 - **कविता** — Poetry reader
 - **शायरी** — Shayari by theme
 - **इतिहास** — Music history timeline

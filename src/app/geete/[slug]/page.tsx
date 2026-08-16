@@ -10,11 +10,16 @@ import { getArtistBySlug, getArticlesForSong, getSongBySlug } from "@/lib/reposi
 import { ARTICLE_TYPE_LABELS } from "@/lib/article-types";
 
 export async function generateStaticParams() {
-  const songs = await prisma.song.findMany({
-    where: { status: "PUBLISHED" },
-    select: { slug: true },
-  });
-  return songs.map((song) => ({ slug: song.slug }));
+  try {
+    const songs = await prisma.song.findMany({
+      where: { status: "PUBLISHED" },
+      select: { slug: true },
+    });
+    return songs.map((song) => ({ slug: song.slug }));
+  } catch {
+    const { songs } = await import("@/data/songs");
+    return songs.map((song) => ({ slug: song.slug }));
+  }
 }
 
 export async function generateMetadata({

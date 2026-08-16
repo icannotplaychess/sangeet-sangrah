@@ -8,11 +8,15 @@ import { ARTICLE_TYPE_LABELS } from "@/lib/article-types";
 import { prisma } from "@/lib/db";
 
 export async function generateStaticParams() {
-  const articles = await prisma.article.findMany({
-    where: { status: "PUBLISHED" },
-    select: { slug: true },
-  });
-  return articles.map((a) => ({ slug: a.slug }));
+  try {
+    const articles = await prisma.article.findMany({
+      where: { status: "PUBLISHED" },
+      select: { slug: true },
+    });
+    return articles.map((a) => ({ slug: a.slug }));
+  } catch {
+    return [];
+  }
 }
 
 export async function generateMetadata({
