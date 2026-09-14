@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import AdminLoginForm from "./AdminLoginForm";
+import { hasAdminPassword } from "@/lib/auth";
 import { hasDatabase } from "@/lib/db-url";
 import { prisma } from "@/lib/db";
 
@@ -26,7 +27,7 @@ async function getSetupStatus(): Promise<SetupStatus> {
   return {
     dbConfigured,
     dbReady,
-    passwordSet: Boolean(process.env.ADMIN_PASSWORD),
+    passwordSet: hasAdminPassword(),
     blobConfigured: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
   };
 }
@@ -76,7 +77,7 @@ export default async function AdminLoginPage() {
             <StatusRow
               ok={status.passwordSet}
               label="Admin password set"
-              hint="Vercel → Settings → Environment Variables → ADMIN_PASSWORD जोडा, नंतर Redeploy करा."
+              hint="Vercel → Settings → Environment Variables → Key: SANGEET_ADMIN_PASSWORD, Value: तुमचा password. Production साठी check करा, Save, नंतर Redeploy."
             />
             <StatusRow
               ok={status.blobConfigured}

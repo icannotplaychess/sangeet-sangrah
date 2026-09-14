@@ -7,20 +7,28 @@ import { prisma } from "./db";
 const COOKIE_NAME = "ss_admin_session";
 const SESSION_DAYS = 7;
 
+/** Accept either name — use SANGEET_ADMIN_PASSWORD if Vercel blocks ADMIN_PASSWORD. */
+export function getAdminPassword(): string | undefined {
+  return process.env.SANGEET_ADMIN_PASSWORD ?? process.env.ADMIN_PASSWORD;
+}
+
+export function hasAdminPassword(): boolean {
+  return Boolean(getAdminPassword());
+}
+
 function getSecret(): Uint8Array {
-  // ADMIN_SECRET is preferred; otherwise derive a stable secret from
-  // ADMIN_PASSWORD so only one env var is required to run the CMS.
+  const adminPassword = getAdminPassword();
   const secret =
     process.env.ADMIN_SECRET ??
-    (process.env.ADMIN_PASSWORD
-      ? createHash("sha256").update(`sangeet-sangrah:${process.env.ADMIN_PASSWORD}`).digest("hex")
+    (adminPassword
+      ? createHash("sha256").update(`sangeet-sangrah:${adminPassword}`).digest("hex")
       : null);
-  if (!secret) throw new Error("ADMIN_PASSWORD is not configured");
+  if (!secret) throw new Error("Admin password is not configured");
   return new TextEncoder().encode(secret);
 }
 
 export async function verifyAdminPassword(password: string): Promise<boolean> {
-  const expected = process.env.ADMIN_PASSWORD;
+  const expected = getAdminPassword();
   if (!expected) return false;
   if (expected.startsWith("$2")) {
     return bcrypt.compare(password, expected);

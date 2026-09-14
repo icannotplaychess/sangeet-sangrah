@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   createAdminSession,
+  hasAdminPassword,
   setSessionCookie,
   verifyAdminPassword,
 } from "@/lib/auth";
@@ -9,11 +10,11 @@ import { hasDatabase } from "@/lib/db-url";
 export async function POST(request: Request) {
   const body = (await request.json()) as { password?: string };
 
-  if (!process.env.ADMIN_PASSWORD) {
+  if (!hasAdminPassword()) {
     return NextResponse.json(
       {
         error:
-          "ADMIN_PASSWORD सेट केलेला नाही. Vercel → Settings → Environment Variables मध्ये जोडा, नंतर Redeploy करा.",
+          "Admin password सेट केलेला नाही. Vercel → Environment Variables मध्ये SANGEET_ADMIN_PASSWORD जोडा, नंतर Redeploy करा.",
       },
       { status: 503 },
     );
