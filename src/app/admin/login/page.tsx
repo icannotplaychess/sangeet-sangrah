@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import AdminLoginForm from "./AdminLoginForm";
 import { hasAdminPassword } from "@/lib/auth";
-import { hasDatabase } from "@/lib/db-url";
+import { ensureDatabaseUrl, getDatabaseDiagnostics, hasDatabase } from "@/lib/db-url";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -11,10 +11,14 @@ type SetupStatus = {
   dbReady: boolean;
   passwordSet: boolean;
   blobConfigured: boolean;
+  dbSource: string | null;
+  envKeysFound: string[];
 };
 
 async function getSetupStatus(): Promise<SetupStatus> {
+  const diagnostics = getDatabaseDiagnostics();
   const dbConfigured = hasDatabase();
+  ensureDatabaseUrl();
   let dbReady = false;
   if (dbConfigured) {
     try {
@@ -29,6 +33,8 @@ async function getSetupStatus(): Promise<SetupStatus> {
     dbReady,
     passwordSet: hasAdminPassword(),
     blobConfigured: Boolean(process.env.BLOB_READ_WRITE_TOKEN),
+    dbSource: diagnostics.source,
+    envKeysFound: diagnostics.envKeysFound,
   };
 }
 
@@ -63,7 +69,11 @@ export default async function AdminLoginPage() {
             <StatusRow
               ok={status.dbConfigured}
               label="Database connected"
-              hint="Vercel → तुमचा project → Storage tab → Create Database → Neon (Postgres) → project ला connect करा. नंतर Redeploy करा."
+              hint={
+                status.envKeysFound.length > 0
+                  ? `Database variables सापडल्या (${status.envKeysFound.slice(0, 4).join(", ")}${status.envKeysFound.length > 4 ? "…" : ""}) पण URL resolve झाला नाही. Vercel → Storage → तुमचा database → Projects tab → Connect Project → Production check करा, नंतर Redeploy.`
+                  : "कोणतीही database variable सापडली नाही. Vercel → Storage → database → Projects tab → Connect Project → Production साठी connect करा, नंतर Redeploy."
+              }
             />
             <StatusRow
               ok={status.dbReady}
@@ -85,9 +95,23 @@ export default async function AdminLoginPage() {
               hint="MP3 अपलोडसाठी: Storage tab → Create → Blob → connect करा. (हे नंतरही करता येईल.)"
             />
           </ul>
+          {status.dbConfigured && status.dbSource && (
+            <p className="font-label mt-3 text-[8px] text-teal-bright">
+              DB detected via {status.dbSource}
+            </p>
+          )}
+          {status.envKeysFound.length > 0 && (
+            <p className="font-label mt-3 text-[8px] text-dim">
+              Env keys on server: {status.envKeysFound.join(", ")}
+            </p>
+          )}
           <p className="font-deva mt-4 text-xs leading-relaxed text-dim">
             प्रत्येक बदलानंतर Vercel मध्ये <strong>Redeploy</strong> करणे आवश्यक आहे — नवीन settings
             फक्त नव्या deployment मध्ये लागू होतात.
+          </p>
+          <p className="font-deva mt-2 text-xs leading-relaxed text-dim">
+            महत्वाचे: database तयार केल्यानंतर <strong>Projects tab</strong> मध्ये तुमचा Vercel project
+            निवडून <strong>Connect</strong> करा — फक्त database तयार करणे पुरे नाही.
           </p>
         </div>
       )}

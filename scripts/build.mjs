@@ -1,20 +1,22 @@
 import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { listDatabaseEnvKeys, resolveDatabaseUrl } from "./resolve-db-url.mjs";
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const bin = (name) => path.join(root, "node_modules", ".bin", name);
 
-// Normalize the Postgres URL from Vercel marketplace env-var names.
-const dbUrl =
-  [
-    process.env.POSTGRES_PRISMA_URL,
-    process.env.DATABASE_URL,
-    process.env.POSTGRES_URL,
-    process.env.DATABASE_URL_UNPOOLED,
-  ].find((u) => u && /^postgres(ql)?:\/\//.test(u)) ?? null;
+const resolved = resolveDatabaseUrl(process.env);
 
-if (dbUrl) process.env.DATABASE_URL = dbUrl;
+if (resolved) {
+  process.env.DATABASE_URL = resolved.url;
+  console.log(`Database configured via ${resolved.source}`);
+} else {
+  const keys = listDatabaseEnvKeys(process.env);
+  if (keys.length > 0) {
+    console.log(`Database env keys present but no URL resolved: ${keys.join(", ")}`);
+  }
+}
 
 function run(command, args) {
   const result = spawnSync(command, args, {
@@ -29,13 +31,22 @@ function run(command, args) {
 
 run(bin("prisma"), ["generate"]);
 
-if (dbUrl) {
+if (resolved) {
+  // Neon migrations work best with a direct (non-pooled) connection
+  const unpooled =
+    process.env.DATABASE_URL_UNPOOLED ??
+    process.env.POSTGRES_URL_NON_POOLING ??
+    process.env.POSTGRES_URL_NO_SSL;
+  if (unpooled && /^postgres(ql)?:\/\//.test(unpooled)) {
+    process.env.DATABASE_URL = unpooled;
+  }
   run(bin("prisma"), ["migrate", "deploy"]);
+  process.env.DATABASE_URL = resolved.url;
   run(bin("tsx"), ["prisma/seed.ts"]);
 } else {
   console.log(
-    "No Postgres DATABASE_URL configured — building in read-only mode (static content only). " +
-      "Create a Postgres database in Vercel → Storage to enable the CMS.",
+    "No Postgres connection found — building in read-only mode (static content only). " +
+      "In Vercel: Storage → your database → Projects tab → Connect Project → Production, then Redeploy.",
   );
 }
 
